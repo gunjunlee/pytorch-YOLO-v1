@@ -1,0 +1,5 @@
+.vscode/
+__pycache__/
+ckpt/
+data/
+.DS_Store

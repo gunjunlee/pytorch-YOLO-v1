@@ -16,7 +16,7 @@ class Model(nn.Module):
     def forward(self, x):
         return self.net(x)
     
-    def compile(self, optimizer, criterion, metric=None, scheduler=None):
+    def compile(self, optimizer, criterion, metric=None, scheduler=None, label_dict=None):
         if optimizer is None:
             raise ValueError('optimizer is None!')
         if criterion is None:
@@ -26,6 +26,7 @@ class Model(nn.Module):
         self.criterion = criterion
         self.metric = metric
         self.scheduler = scheduler
+        self.label_dict = label_dict
 
     def fit(self, train_dataloader, val_dataloader,
             epoch=100, use_gpu=True, pth='ckpt/model.pth'):

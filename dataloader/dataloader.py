@@ -247,9 +247,9 @@ if __name__ == '__main__':
         print(dataset.names[i], i)
         img = visualize(Image.fromarray((img*255).permute((1, 2, 0)).numpy().astype(np.uint8)),
                         target,
-                        dataset.C,
+                        label_dict,
                         thres=0.5)
 
-        # plt.clf()
-        # plt.imshow(img)
-        # plt.show(img)
+        plt.clf()
+        plt.imshow(img)
+        plt.show(img)

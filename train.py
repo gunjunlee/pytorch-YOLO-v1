@@ -64,5 +64,5 @@ if __name__ == '__main__':
     
     model = Model(net)
 
-    model.compile(optimizer, criterion, metric, scheduler)
+    model.compile(optimizer, criterion, metric, scheduler, label_dict)
     model.fit(train_dataloader=train_dataloader, val_dataloader=val_dataloader, epoch=args.epoch, use_gpu=args.gpu)

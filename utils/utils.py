@@ -11,7 +11,7 @@ def make_label_dict(path):
             label_dict[class_name.strip()] = len(label_dict)
     return label_dict
 
-def visualize(img, pred, num_classes, thres=0.5):
+def visualize(img, pred, label_dict, thres=0.5):
     """visualizing prediction of an image
     
     Parameters
@@ -20,16 +20,23 @@ def visualize(img, pred, num_classes, thres=0.5):
         source image
     pred : torch.tensor
         [S, S, B*5+C]
+    label_dict: list
+        {str: int, ...}
     thres: float
         threshold of confidence
     """
-    confident_bboxes = get_confident_bboxes(pred, num_classes, thres)
+    labelnum2name = dict()
+    for k, v in label_dict.items():
+        labelnum2name[v] = k
+    confident_bboxes = get_confident_bboxes(pred, len(label_dict), thres)
     w, h = img.size
     draw = ImageDraw.Draw(img)
     for confident_bbox in confident_bboxes:
         # print(confident_bbox)
-        confident_bbox = np.array(confident_bbox) * np.array([w, h, w, h])
-        draw.rectangle(list(confident_bbox), outline='red')
+        confident_bbox = np.array(confident_bbox) * np.array([w, h, w, h, 1, 1])
+        label_name = labelnum2name[int(confident_bbox[5])]
+        draw.rectangle(list(confident_bbox)[:4], outline='red')
+        draw.text(list(confident_bbox)[:2], '{},{:.3f}'.format(label_name, confident_bbox[4]), (255, 255, 0))
     del draw
     return img
 
@@ -56,8 +63,9 @@ def get_confident_bboxes(pred, num_classes, thres=0.5):
                     y0 = y_center - h/2
                     x1 = x_center + w/2
                     y1 = y_center + h/2
-                    
-                    bbox = (x0, y0, x1, y1)
+                    conf = pred[i][j][k+4].item()
+                    label = np.argmax(pred[i][j][B*5:])
+                    bbox = (x0, y0, x1, y1, conf, label)
                     confident_bboxes.append(bbox)
     
     return confident_bboxes

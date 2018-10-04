@@ -71,7 +71,11 @@ ball 0.1 0.1 0.3 0.2
 
 training:
 ```
-python train.py
+python train.py --data       = path/to/training/data (default: './data/train')
+                --batch_size = batch size            (default: 32)
+                --lr         = learning rate         (default: 1e-3)
+                --epoch      = epoch                 (default: 100)
+                --gpu        = using gpu or not      (default: True)
 ```
 
 test:

@@ -113,18 +113,51 @@ class YOLODataset(BaseDataset):
         return len(self.names)
     
     def __getitem__(self, idx):
+        """return img, location tensor
+        
+        Parameters
+        ----------
+        idx : int
+            index of the data
+        
+        Returns
+        -------
+        (torch.tensor, torch.tensor)
+            return (img, location) img: [3, H, W], location: [self.S, self.S, self.B*5+self.C]
+        """
+
         img = self.get_image(idx)
         labels, bboxes = self.get_bboxes(idx)
         target = self.make_target(labels, bboxes)
         
         img = self.to_tensor(img)
-        target = torch.tensor(target)
-
+        target = torch.tensor(target).float()
         return img, target
 
     def make_target(self, labels, bboxes):
+        """make location np.ndarray from bboxes of an image
+        
+        Parameters
+        ----------
+        labels : list
+            [0, 1, 4, 2, ...]
+            labels of each bboxes
+        bboxes : list
+            [[x_center, y_center, width, height], ...]
+        
+        Returns
+        -------
+        np.ndarray
+            [self.S, self.S, self.B*5+self.C]
+            location array
+        """
+
         num_elements = self.B*5 + self.C
         num_bboxes = len(bboxes)
+        
+        # for excetion: num of bboxes is zero
+        if num_bboxes == 0:
+            return np.zeros((self.S, self.S, num_elements))
 
         labels = np.array(labels, dtype=np.int)
         bboxes = np.array(bboxes, dtype=np.float)
@@ -172,6 +205,8 @@ class YOLODataset(BaseDataset):
         name, _ = osp.splitext(self.names[idx])
         with open(osp.join(self.path, 'bboxes', name+'.txt'), 'r') as f:
             for line in f:
+                if line.strip() == '':
+                    continue
                 label, x0, y0, x1, y1 = line.strip().split(' ')
                 x0, y0 = float(x0), float(y0)
                 x1, y1 = float(x1), float(y1)
@@ -180,9 +215,9 @@ class YOLODataset(BaseDataset):
                 x_center, y_center = (x0 + x1) / 2, (y0 + y1) / 2
                 width, height = x1-x0, y1-y0
                 if width < 0:
-                    raise ValueError('width of obj is negative!')
+                    raise ValueError('width of obj is negative! name: {}'.format(name))
                 if height < 0:
-                    raise ValueError('height of obj is negative!')
+                    raise ValueError('height of obj is negative! name: {}'.format(name))
 
                 num_label = self.label_dict[label]
                 labels.append(num_label)
@@ -194,9 +229,11 @@ if __name__ == '__main__':
     std = [0.229, 0.224, 0.225]
 
     to_tensor = transforms.Compose([
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean, std)
+        # transforms.Normalize(mean, std)
     ])
+    
     import sys, pdb
     import matplotlib.pyplot as plt
     sys.path.append('.')
@@ -205,7 +242,14 @@ if __name__ == '__main__':
     label_dict = make_label_dict('./data')
     print(label_dict)
     dataset = YOLODataset('./data/train', 7, 2, len(label_dict), label_dict, to_tensor)
-    img, target = dataset[0]
-    img = visualize(Image.open('data/train/images/002.jpg'), target, dataset.C, thres=0.5)
-    plt.imshow(img)
-    plt.show(img)
+    for i in range(len(dataset)):
+        img, target = dataset[i]
+        print(dataset.names[i], i)
+        img = visualize(Image.fromarray((img*255).permute((1, 2, 0)).numpy().astype(np.uint8)),
+                        target,
+                        dataset.C,
+                        thres=0.5)
+
+        # plt.clf()
+        # plt.imshow(img)
+        # plt.show(img)

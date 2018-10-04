@@ -23,14 +23,12 @@ def visualize(img, pred, num_classes, thres=0.5):
     thres: float
         threshold of confidence
     """
-
     confident_bboxes = get_confident_bboxes(pred, num_classes, thres)
     w, h = img.size
     draw = ImageDraw.Draw(img)
     for confident_bbox in confident_bboxes:
         # print(confident_bbox)
         confident_bbox = np.array(confident_bbox) * np.array([w, h, w, h])
-        print(confident_bbox)
         draw.rectangle(list(confident_bbox), outline='red')
     del draw
     return img

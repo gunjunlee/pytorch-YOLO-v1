@@ -77,7 +77,6 @@ class Loss(nn.Module):
             pred (torch.floatTensor): [N, S, S, (Bx5+C)]
             target (torch.floatTensor): [N, S, S, Bx5+C] score is always equal to 1. bbox: [x_center, y_center, w, h]
         """
-
         num_elements = self.B * 5 + self.C
         num_batch = target.size(0)
         
@@ -96,23 +95,20 @@ class Loss(nn.Module):
         
         responsible_bbox_arg = self.get_argmax_iou(pred, target)
         responsible_bbox_scatter = torch.tensor((0, 1, 2, 3, 4))\
-                                .repeat((num_batch, self.S * self.S, 1))\
-                                + responsible_bbox_arg
-        responsible_bbox_mask = torch.zeros((num_batch, self.S * self.S, self.B * 5 + self.C))\
-                                .scatter_(2, responsible_bbox_scatter, torch.ones((num_batch, self.S * self.S, self.B * 5 + self.C)))
+                                .repeat((num_batch, self.S * self.S, 1)).cuda()\
+                                + responsible_bbox_arg.view(-1, self.S*self.S, 1)
+        responsible_bbox_mask = torch.zeros((num_batch, self.S * self.S, self.B * 5 + self.C)).cuda()\
+                                .scatter_(2, responsible_bbox_scatter, torch.ones((num_batch, self.S * self.S, self.B * 5 + self.C)).cuda())
         responsible_bbox_mask = responsible_bbox_mask * obj_mask
 
-
-        # no_responsible_bbox = torch.ones((num_batch, self.S * self.S, self.B * 5 + self.C))
-
         # class prediction loss
-        class_prediction_loss = ((pred - target) * obj_mask)[:, :, self.B*5:].pow(2).sum()
+        class_prediction_loss = ((torch.sigmoid(pred) - torch.sigmoid(target)) * obj_mask)[:, :, self.B*5:].pow(2).sum()
 
         # no obj loss
-        noobj_loss = self.lambda_noobj * ((pred-target) * noobj_mask)[:, :, 4:self.B*5:5].pow(2).sum()
+        noobj_loss = self.lambda_noobj * ((torch.sigmoid(pred) - torch.sigmoid(target)) * noobj_mask)[:, :, 4:self.B*5:5].pow(2).sum()
 
         # obj loss
-        obj_loss = ((pred-target) * responsible_bbox_mask)[:, :, 4:self.B*5:5].pow(2).sum()
+        obj_loss = ((torch.sigmoid(pred) - torch.sigmoid(target)) * responsible_bbox_mask)[:, :, 4:self.B*5:5].pow(2).sum()
 
         # coord loss
         coord_xy_loss = self.lambda_coord * ((pred-target) * responsible_bbox_mask)[:, :, 0:self.B*5:5].pow(2).sum()\
@@ -123,7 +119,8 @@ class Loss(nn.Module):
         
         total_loss = class_prediction_loss + noobj_loss + obj_loss + coord_xy_loss + coord_wh_loss
 
-        return total_loss
+        return total_loss/num_batch
+
 
 if __name__ == '__main__':
     loss = YOLOLoss(1, 2, 2)

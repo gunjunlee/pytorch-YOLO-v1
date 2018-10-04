@@ -74,7 +74,7 @@ class YOLO(nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
-        x = x.view(-1, self.B * 5 + self.C, 7, 7)
+        x = x.view(-1, self.S, self.S, self.B * 5 + self.C)
         return x
 
 if __name__ == '__main__':

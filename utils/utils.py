@@ -5,8 +5,21 @@ import os
 import os.path as osp
 
 def make_label_dict(path):
+    """make label dictionary
+    
+    Parameters
+    ----------
+    path : str
+        path to class names file
+    
+    Returns
+    -------
+    dict
+        {'person': 0, 'car': 1, ...}
+    """
+
     label_dict = dict()
-    with open(osp.join(path, 'class_names.txt'), 'r') as f:
+    with open(osp.join(path), 'r') as f:
         for class_name in f:
             label_dict[class_name.strip()] = len(label_dict)
     return label_dict

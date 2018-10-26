@@ -10,7 +10,7 @@ import random
 from models import Model, YOLO
 from loss import Loss
 from metric import Metric
-from dataloader import YOLODataset, BaseDataLoader
+from dataloader import COCODataset, BaseDataLoader
 from utils import make_label_dict
 
 S, B, C = 7, 2, None
@@ -20,7 +20,7 @@ def arg_parse():
     parser = argparse.ArgumentParser()
     add_arg = parser.add_argument
     add_arg('--data', default='./data/train', help='path to training data')
-    add_arg('--batch_size', default=4, type=int, help='batch size')
+    add_arg('--batch_size', default=32, type=int, help='batch size')
     add_arg('--lr', default=1e-3, type=float, help='learning rate')
     add_arg('--epoch', default=100, type=int, help='num of epochs')
     add_arg('--gpu', default=True, type=bool, help='use gpu')
@@ -41,16 +41,25 @@ if __name__ == '__main__':
         # transforms.Normalize(mean, std)
     ])
 
-    label_dict = make_label_dict('data/class_names.txt')
+    label_dict = make_label_dict('dataloader/coco_classes_names.txt')
     C = len(label_dict)
-    dataset = YOLODataset('data/train', S, B, C,
-                          label_dict=label_dict,
-                          to_tensor=to_tensor)
-    dataloader = BaseDataLoader(dataset=dataset, batch_size=args.batch_size)
 
-    len_train = len(dataset) * 8 // 10
-    len_val = len(dataset) - len_train
-    train_dataloader, val_dataloader = dataloader.split([len_train, len_val])
+    val_dataset = COCODataset(S=S, B=B, C=C,
+                              label_dict=label_dict,
+                              img_root='/data/coco/2017/val2017/',
+                              ann_path='/data/coco/2017/annotations/instances_val2017.json')
+    train_dataset = COCODataset(S=S, B=B, C=C,
+                                label_dict=label_dict,
+                                img_root='/data/coco/2017/train2017/',
+                                ann_path='/data/coco/2017/annotations/instances_train2017.json')
+
+    val_dataloader = BaseDataLoader(dataset=val_dataset,
+                                    batch_size=args.batch_size,
+                                    num_workers=8)
+    train_dataloader = BaseDataLoader(dataset=train_dataset,
+                                    batch_size=args.batch_size,
+                                    num_workers=8)
+    
 
     net = YOLO(S, B, C)
     if args.gpu:
@@ -65,4 +74,7 @@ if __name__ == '__main__':
     model = Model(net)
 
     model.compile(optimizer, criterion, metric, scheduler, label_dict)
-    model.fit(train_dataloader=train_dataloader, val_dataloader=val_dataloader, epoch=args.epoch, use_gpu=args.gpu)
+    model.fit(train_dataloader=train_dataloader,
+              val_dataloader=val_dataloader,
+              epoch=args.epoch,
+              use_gpu=args.gpu)

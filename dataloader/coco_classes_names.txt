@@ -1,0 +1,20 @@
+person
+car
+bus
+truck
+traffic light
+bench
+cat
+backpack
+handbag
+bottle
+cup
+knife
+bowl
+chair
+couch
+dining table
+laptop
+cell phone
+book
+clock

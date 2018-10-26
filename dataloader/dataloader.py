@@ -224,32 +224,41 @@ class YOLODataset(BaseDataset):
                 bboxes.append((x_center, y_center, width, height))
         return labels, bboxes
 
+
 if __name__ == '__main__':
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
+    # mean = [0.485, 0.456, 0.406]
+    # std = [0.229, 0.224, 0.225]
 
-    to_tensor = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        # transforms.Normalize(mean, std)
-    ])
+    # to_tensor = transforms.Compose([
+    #     transforms.Resize((224, 224)),
+    #     transforms.ToTensor(),
+    #     # transforms.Normalize(mean, std)
+    # ])
     
-    import sys, pdb
+    # import sys, pdb
+    # import matplotlib.pyplot as plt
+    # sys.path.append('.')
+    # from utils import make_label_dict, visualize
+    
+    # label_dict = make_label_dict('./data')
+    # print(label_dict)
+    # dataset = YOLODataset('./data/train', 7, 2, len(label_dict), label_dict, to_tensor)
+    # for i in range(len(dataset)):
+    #     img, target = dataset[i]
+    #     print(dataset.names[i], i)
+    #     img = visualize(Image.fromarray((img*255).permute((1, 2, 0)).numpy().astype(np.uint8)),
+    #                     target,
+    #                     label_dict,
+    #                     thres=0.5)
+
+    #     plt.clf()
+    #     plt.imshow(img)
+    #     plt.show(img)
+
+    # ms coco
+    import pdb
     import matplotlib.pyplot as plt
-    sys.path.append('.')
-    from utils import make_label_dict, visualize
-    
-    label_dict = make_label_dict('./data')
-    print(label_dict)
-    dataset = YOLODataset('./data/train', 7, 2, len(label_dict), label_dict, to_tensor)
+    dataset = COCODataset(img_root='/data/coco/2017/val2017/',
+                          ann_path='/data/coco/2017/annotations/instances_val2017.json')
     for i in range(len(dataset)):
-        img, target = dataset[i]
-        print(dataset.names[i], i)
-        img = visualize(Image.fromarray((img*255).permute((1, 2, 0)).numpy().astype(np.uint8)),
-                        target,
-                        label_dict,
-                        thres=0.5)
-
-        plt.clf()
-        plt.imshow(img)
-        plt.show(img)
+        dataset[i]
